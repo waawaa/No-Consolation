@@ -159,6 +159,7 @@ LPVOID xGetLibAddress(
     CHAR                    dll_name[64] = { 0 };
     DWORD                   i            = 0;
     int                     correct      = -1;
+    wchar_t *dllName = {0};
 
     if (loaded)
         *loaded = FALSE;
@@ -186,18 +187,10 @@ LPVOID xGetLibAddress(
          correct != 0 && dte->DllBase != NULL && addr == NULL;
          dte=(PLDR_DATA_TABLE_ENTRY)dte->Reserved1[0])
     {
-        base = dte->DllBase;
-        dos  = (PIMAGE_DOS_HEADER)base;
-        nt   = RVA2VA(PIMAGE_NT_HEADERS, base, dos->e_lfanew);
-        rva  = nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
-        if (rva == 0) continue;
+        dllName = dte->BaseDllName.Buffer;
+        correct = _wcsistr(dllName, name);
 
-        exp  = RVA2VA(PIMAGE_EXPORT_DIRECTORY, base, rva);
-        name = RVA2VA(PCHAR, base, exp->Name);
-
-        correct = _stricmp(dll_name, name);
-
-        if (correct == 0) {
+        if (correct != 0) {
             addr = base;
         }
     }
